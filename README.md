@@ -1,4 +1,4 @@
-# Use OKTA Integration with Messenger for SSO configuration
+# Integrating OKTA with Messenger for SSO configuration
 
 View the [Use OKTA Integration with Messenger for SSO configuration](https://github.com/GenesysCloudBlueprints/messenger-authentication-okta-integration-blueprint "[Use OKTA Integration with Messenger for SSO configuration"). 
 

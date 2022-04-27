@@ -1,5 +1,5 @@
 ---
-title: Use OKTA Integration with Messenger for SSO configuration
+title: Integrating OKTA with Messenger for SSO configuration
 author: rekha.mahalingam
 indextype: blueprint
 icon: blueprint
@@ -15,11 +15,11 @@ This Genesys Cloud Developer Blueprint demonstrates how to integrate Web messeng
 
 ## Scenario
 
-This page explains the steps that the users should follow to **Integrate Messenger** with the **Identity Provider-OKTA** via Genesys Cloud.
+Use the following steps to **Integrate Messenger** with the **Identity Provider-OKTA**.
 
 ## Solution components
 
-**Genesys Cloud** - A suite of Genesys cloud services for enterprise-grade communications, collaboration, and contact center management. In this solution, a Genesys Cloud user account is required for your application to be authorized to integrate with Messenger.
+**Genesys Cloud** - A suite of Genesys cloud services for enterprise-grade communications, collaboration, and contact center management. In this solution, a Genesys Cloud user account is required for your application to integrate with Messenger.
 
 ## Prerequisites
 
@@ -34,7 +34,7 @@ Administrator-level knowledge of Genesys Cloud
 
 ### OKTA Developer account
 
-- An OKTA developer account. For more information on how to create an OKTA developer account see, [okta Developer](https://developer.okta.com/signup/ "Goes to the okta Developer page") on the okta Developer website.
+- An OKTA developer account. For more information on how to create an OKTA developer account, see [okta Developer](https://developer.okta.com/signup/ "Goes to the okta Developer page") on the okta Developer website.
 
 ## Implementation steps
 
@@ -65,7 +65,7 @@ Administrator-level knowledge of Genesys Cloud
 
 ### Configure Genesys Cloud
 
-You must make the following changes to enable communication from **Genesys Cloud** to **Messenger**: 
+Ensure the following changes are made to enable communication from **Genesys Cloud** to **Messenger**: 
   1. Integration
   2. Messenger Configuration
   3. Messenger Deployment
@@ -84,15 +84,15 @@ Login to the Genesys Cloud account within your **Organization** and click the **
 
   ![OpenID Connect Messenger Configuration install](./images/integration.png "OpenID Connect Messenger Configuration install")
 
-3. In the **Configuration** section, place the Discovery Uri - https://<okta-user-domain>/oauth2/default/.well-known/openid-configuration.
+3. Click the **Configuration** tab, place the Discovery URI - https://<okta-user-domain>/oauth2/default/.well-known/openid-configuration.
 
   ![Configuration tab](./images/Integration_properties.png "Configuration tab")
 
-4. In the **Credentials** section, click Configure and enter your client credentials.
+4. Click **Credentials**. Then click Configure and enter your client credentials.
 5. Click Save.
 6. Navigate to the Integrations page and set your integration to **Active**.
 
-  ![Genesys Cloud Integration page](./images/Active.png "Genesys Cloud Integration page")
+  ![Integrations page](./images/Active.png "Genesys Cloud integrations page")
 
 ### Configure Messenger
 
@@ -101,7 +101,7 @@ Login to the Genesys Cloud account within your **Organization** and click the **
 
   ![Messenger Configuration Apps](./images/Messenger-Okta-configuration.png "[Messenger Configuration Apps")
 
-### Deploying Messenger
+### Deploy Messenger
 
 1. In **Genesys Cloud > Admin > Messenger Deployment**, select the **Configuration** created in the [Messenger Configuration](#messenger-configuration "Goes to Messenger Configuration step")
 
@@ -113,14 +113,14 @@ Login to the Genesys Cloud account within your **Organization** and click the **
  ![Deploy your snippet](./images/Snippet.png "Deploy your snippet")
 
 :::info
- Note: Note the deployment Id and environment from snippet to play with sample authentication app .
+ Note: The deployment ID and environment from snippet to play with sample authentication app.
 :::
 
 ### Configure authenticated Messenger
 
 Write the necessary code to configure Messenger for authenticated Web messaging on your webpage.
 
-1. There are two approaches to enabling an OKTA Sign-In experience using JavaScript.
+1. There are two approaches to enabling an OKTA sign-in experience using JavaScript.
   A. [Okta Auth JavaScript SDK](https://global.oktacdn.com/okta-auth-js/5.2.2/okta-auth-js.min.js 'Okta Auth JavaScript SDK').
   B. OAuth 2.0 Endpoint.
 
@@ -249,7 +249,7 @@ AuthProvider.command('Auth.logout').finally(() => {
 });
 ```
 
-### Run the sample app
+### Run sample app
 
 You can run the sample app locally or from the blueprint repo.
 
@@ -268,6 +268,6 @@ To run the sample app from the blueprint repo:
 
 ## Additional resources
 
- Refer the source code for sample app [here](https://github.com/GenesysCloudBlueprints/messenger-authentication-okta-integration-blueprint/blob/main/docs/oauth.html "Goes to messenger-authentication-okta-integration-blueprint") in GitHub
+ [messenger-authentication-okta-integration-blueprint](https://github.com/GenesysCloudBlueprints/messenger-authentication-okta-integration-blueprint/blob/main/docs/oauth.html "Goes to messenger-authentication-okta-integration-blueprint repository") in GitHub
 
 [Platform API](https://developer.genesys.cloud/commdigital/digital/webmessaging/authenticate "Goes to the Authenticated web messaging article") in the Genesys Cloud Developer Center.
