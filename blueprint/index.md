@@ -44,16 +44,18 @@ summary: |
 4. On the Create a new app integration page, in the Sign-in method section, click **OpenID Connect**.
 5. For the application type, select **Web Application** and then click **Next**.
 6. On the New Web App Integration page, in the **App integration name** box, type a name for your app integration.
-7. For **Grant type**, leave all of the default selections. 
+7. For **Grant type**, **Authorization code** is mandatory and select **Refresh token** if required. 
+
+:::primary
+ **Note**: Refresh token is required to obtain a new access token if the existing access token has expired.
+:::
 
 ![Okta Application page](./images/OKTA.png "OKTA Application page")
 
 8. Add the **Sign-in redirect URIs**. 
-	* For local use while you are developing, add http://{local_domain_name}. Example: http://localhost:8080/. 
-	* For production use, add the URL where Messenger will initialize after login.
+	* Add full page URL where messenger have to redirect after login.
 9. Add the **Sign-out redirect URIs**.
-	* For local use while you are developing, add http://{local_domain_name}. Example: http://localhost:8080/. 
-	* For production use, add the appropriate URL.
+	* Add full page URL where messenger have to redirect after logout.
 10. Under **Security**, click **API** > **Trusted Origin** and add your web page origin in the Okta account.
 11. In the **Assignment** section, select the option that best suits your organization and click **Save**. This creates the client credentials.
 12. To find the Okta URL, navigate to **Security** > **API** and click **Default**. The Okta URL appears in the **Issuer** section.
@@ -151,16 +153,29 @@ The following table describes the parameters for the OktaAuth object.
 | `pkce` | The default value is true, which enables the PKCE OAuth flow. To use the Implicit flow or the Authorization Code flow, set this option to false. **Note**: The PKCE OAuth flow works only with a secure domain. |
 | `responseType`| To use the Authorization Code grant type, set this option to **code**.|
 | `maxAge` | Specify the allowable elapsed time, in seconds, since the last time the end user was actively authenticated by Okta.|
-| `nonce` | The Okta Auth JavaScript SDK generates this random value. You can also pass your preferred nonce value as a paramater to the OktaAuth object if you want to overwrite the generated nonce value.|
-{: class="table-striped table-bordered"}
+| `nonce` |  The Okta Auth JavaScript SDK generates this random value. This value is stored in cookie and session storage. You can also pass your preferred nonce value as a paramater to the OktaAuth object if you want to overwrite the generated nonce value. <br/> **Note**: nonce is mandatory to resolve in  [getAuthCode](https://developer.genesys.cloud/api/digital/webmessaging/messengersdk/SDKCommandsEvents#authprovider-plugin "Goes to the Commands and events page") command when using OKTA SDK approach|
+	{: class="table-striped table-bordered"}
+
+	```{"title":"How to extract nonce from session storage","language":"JavaScript"}
+		let oktaTransactionStorage = window.sessionStorage.getItem("okta-transaction-storage"); // Get 'okta-transaction-storage' value from session storage
+
+		if (oktaTransactionStorage) {
+		const storage = JSON.parse(oktaTransactionStorage); // Convert text in 'oktaTransactionStorage' to javascript object
+
+		if (storage && Object.keys(storage).length) { // If 'storage' is present destructure nonce from 'storage'
+		const { nonce } = storage || {};
+		}
+		}
+	```
+
 
 4. To trigger the signIn action, call the **signInWithRedirect** method with the request parameters. The **originalUri** parameter tracks where the user came from before they signed in. The additional parameters are mapped to the Authorize options. You can trigger the sign-in action via a link, button, and so on.
 
 	```{"title":"OktaAuth signInWithRedirect method","language":"JavaScript"}
-	authClient.signInWithRedirect({
+		authClient.signInWithRedirect({
 		originalUri: <your current page url here>,
 		...oktaConfig
-	});
+		});
 	```
 
 ### Enable authenticatecd sign-in with the OAuth endpoint
@@ -181,9 +196,9 @@ authURL = `<DomainURL>client_id=<ClientId>&scope=openid%20email%20profile%20offl
 
 If you add the optional parameters, `nonce` and `maxAge`, your request URL looks like this:
 
-```{"title":"Example request URL with optional parameters `nonce` and `maxAge`","language":"html"}
+```{"title":"Example request URL with optional parameters nonce and maxAge","language":"html"}
 authURL = `<DomainURL>client_id=<ClientId>&scope=openid%20email%20profile%20offline_access&response_type=code&redirect_uri=<RedirectURL>&state=eyJiYWNrVG9QYXRoIjoiL3ByaXZhdGUiLCJpc3N1ZXIiOiJva3RhIiwiYnl0ZXMiOiItSEhlWEV3YmNRak5fQWl3a0NkanVDNEZpQ1VPRV81emkzeFlKa1BQaWcwIn0%3D&nonce=<nonce>&max_age=<maxAge>`
-	```
+```
 
 The following table describes the parameters for the Auth URL.
 
@@ -218,6 +233,13 @@ Genesys('registerPlugin', 'AuthProvider', (AuthProvider) => {
   // *********
   // getAuthCode
 
+  let oktaTransactionStorage = window.document.cookie.toString(); // Get nonce from cookie
+
+  if (oktaTransactionStorage) {
+  const storage = oktaTransactionStorage.split('okta-oauth-nonce=')[1]; // Extract 'okta-oauth-nonce' cookie from 'oktaTransactionStorage'
+  const nonce = storage.split(';')[0];
+  }
+
   const urlParams = new URLSearchParams(window.location.search); // Get the authorization response which is added as a query string from the redirect URL
   const authCode = urlParams.has('code') ? urlParams.get('code'); // Get code from the query string
 
@@ -229,14 +251,20 @@ Genesys('registerPlugin', 'AuthProvider', (AuthProvider) => {
 
   e.resolve({
       authCode: <authCode>,			// Pass your authCode here
-      redirectUri: <your redirect uri>,	// Pass the redirection URI configured in your authentication provider here
-      nonce: <nonce>,				//  If you use the Okta Auth JavaScript SDK to authenticate signin, pass the random string value stored in session storage. If you use the endpoint to authenticate signin, generate a random string value.
+      redirectUri: <your redirect uri>,	   // Pass the redirection URI configured in your authentication provider here
+      nonce: <nonce>,				//  Mandatory parameter in OKTA Javascript SDK approach.
       maxAge: <maxAge>				// Pass the elapsed time in seconds as an optional parameter
       codeVerifier: <codeVerifier>		// For PKCE Oauth flow: If you use the Okta Auth JavaScript SDK to authenticate signin, get the code verifier from session storage. If you use the endpoint to authenticate signin, pass a cryptographically random string that you used to generate the codeChallenge value.
     });
   });
 });
 ```
+
+:::primary
+**Note**: 
+- With OKTA SDK approach **nonce** option is mandatory to resolve in [getAuthCode](https://developer.genesys.cloud/api/digital/webmessaging/messengersdk/SDKCommandsEvents#authprovider-plugin "Goes to the Commands and events page") command.
+- The **redirectUri** option must match the **Sign-in redirect URI** specified in OKTA Developer Edition account.
+:::
 
 7. To trigger the sign-out action, call the Okta Auth JavaScript SDK's **signOut** method after the [Auth.logout command](https://developer.genesys.cloud/api/digital/webmessaging/messengersdk/SDKCommandsEvents#auth-logout "Goes to Auth provider plugin"). You can trigger this action when the user clicks a link, button, or interacts with another UI element, for example.  
 
