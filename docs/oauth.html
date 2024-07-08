@@ -569,6 +569,9 @@
 						});
 				};
 
+				// Publishing signedIn event this way here for OKTA, since it redirects the page after successful login. This event is MANDATORY for Messenger to reInitialize.
+				if(AuthProvider && brandAuthCode) AuthProvider.publish('signedIn', { authCode: brandAuthCode });
+
 				// Tell CXBus your plugin is ready (mandatory)
 				AuthProvider.ready();
 			});
