@@ -87,7 +87,7 @@ summary: |
 
 1. In Genesys Cloud > **Admin**, under **Message**, click **Messenger Configurations**. 
 2. Enable Authentication.
-3. From the list, select the [**OAuth integration** you created](#create-an-oauth-integration-in-Genesys-Cloud "Goes to Create an Oauth integration in Genesys Cloud section").
+3. From the list, select the [**OAuth integration** you created](#create-an-oauth-integration-in-genesys-cloud "Goes to Create an Oauth integration in Genesys Cloud section").
 
   ![Apps tab in the Messenger Configurations page](./images/Messenger-Okta-configuration.png "Apps tab in the Messenger Configurations page")
 
@@ -111,20 +111,23 @@ summary: |
 1. Write necessary code to configure authenticated web messaging for Messenger when it runs in your webpage.
 
 2. To enable the Okta Sign-In experience using JavaScript, do either of the following:  
-  * [Enable authenticated sign-in with the Okta Auth JavaScript SDK](#enable-authenticated-sign-in-with-the-Okta-Auth-JavaScript-SDK "Goes to the Enable authenticated sign-in with the Okta Auth JavaScript SDK section").
+  * [Enable authenticated sign-in with the Okta Auth JavaScript SDK](#enable-authenticated-sign-in-with-the-okta-auth-javascript-sdk "Goes to the Enable authenticated sign-in with the Okta Auth JavaScript SDK section").
   * [Enable authenticated sign-in with the OAuth endpoint](#enable-authenticated-sign-in-with-the-oauth-endpoint "Goes to the Enable authenticated sign-in with the OAuth endpoint section").
 
 ### Enable authenticated sign-in with the Okta Auth JavaScript SDK  
 
 Follow these steps to include the Okta Auth JavaScript SDK in your webpage.
 
-1. Get the [Okta Auth JavaScript SDK](https://global.oktacdn.com/okta-auth-js/5.2.2/okta-auth-js.min.js "Okta Auth JavaScript SDK"). 
+1. Get the [Okta Auth JavaScript SDK](https://github.com/okta/okta-auth-js "Okta Auth JavaScript SDK"). 
 
 2. Include the okta-auth-js library in your webpage.
 
 	```{"title":Okta Auth JavaScript SDK","language":"html"}
 	<script src="https://global.oktacdn.com/okta-auth-js/5.2.2/okta-auth-js.min.js" type="text/javascript"></script>
 	```
+	:::primary
+	**Note**: The version shown in this sample may be older than the current version. Devs from okta-auth-js recommend using the highest version available.
+	:::
 3. Create an instance of the OktaAuth object and configure the Okta authorization options.
 
 	```{"title":"OktaAuth Object","language":"JavaScript"}
@@ -313,7 +316,7 @@ const challenge = generateCodeChallenge(verifier); // eslint-disable-line //Gene
 This blueprint includes a sample app that you can run locally or from the Blueprint repo.
 
 :::primary
-**Note**: Regardless of the location from where you run the sample app, you need a Genesys Cloud user account in order for it to work. Our sample app [enables authenticated sign-in with the Okta Auth JavaScript SDK](#enable-authenticated-sign-in-with-the-Okta-Auth-JavaScript-SDK "Goes to the Enable authenticated sign-in with the Okta Auth JavaScript SDK section).
+**Note**: Regardless of the location from where you run the sample app, you need a Genesys Cloud user account in order for it to work. Our sample app [enables authenticated sign-in with the Okta Auth JavaScript SDK](#enable-authenticated-sign-in-with-the-okta-auth-javascript-sdk "Goes to the Enable authenticated sign-in with the Okta Auth JavaScript SDK section").
 :::
 
 To run the sample app from the Blueprint repo:
@@ -336,5 +339,5 @@ OKTA consists of a debugging tool that helps you to monitor the activity and sec
 
 ## Additional resources 
 
-* [Platform API](/api/digital/webmessaging/authenticate "Goes to the Authenticated WebMessaging page in the Genesys Cloud Developer Center")
+* [Authenticated Web Messaging](/commdigital/digital/webmessaging/authenticate "Goes to the Authenticated Web Messaging page in the Genesys Cloud Developer Center")
 
