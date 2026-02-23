@@ -44,10 +44,12 @@ summary: |
 4. On the Create a new app integration page, in the Sign-in method section, click **OpenID Connect**.
 5. For the application type, select **Web Application** and then click **Next**.
 6. On the New Web App Integration page, in the **App integration name** box, type a name for your app integration.
-7. For **Grant type**, **Authorization code** is mandatory and select **Refresh token** if required. 
+7. For **Grant type**, select the appropriate flow for your application:
+	* **Authorization code** - Recommended for most applications. This is the most secure flow.
+	* **Implicit (hybrid)** - For browser-based applications where the ID token is returned directly in the URL. **Note**: Implicit flow is less secure than Authorization Code with PKCE and should only be used when Authorization Code flow is not feasible.
 
 :::primary
- **Note**: Refresh token is required to obtain a new access token if the existing access token has expired.
+ **Note**: Refresh token is required to obtain a new access token if the existing access token has expired(not applicable for Implicit flow)..
 :::
 
 ![Okta Application page](./images/OKTA.png "OKTA Application page")
@@ -154,7 +156,7 @@ The following table describes the parameters for the OktaAuth object.
 | `issuer` | Specify the Okta URL that is listed in your Okta Developer Edition account under **Security** > **API** > **default**.|
 | `scopes`| If required, set the auth scopes to specify the access privileges that are being requested as part of authorization.|
 | `pkce` | The default value is true, which enables the PKCE OAuth flow. To use the Implicit flow or the Authorization Code flow, set this option to false. **Note**: The PKCE OAuth flow works only with a secure domain. |
-| `responseType`| To use the Authorization Code grant type, set this option to **code**.|
+| `responseType`| Specify the OAuth 2.0 response type: **code** for Authorization Code flow, or **id_token** for Implicit flow.|
 | `maxAge` | Specify the allowable elapsed time, in seconds, since the last time the end user was actively authenticated by Okta.|
 | `nonce` |  The Okta Auth JavaScript SDK generates this random value. This value is stored in cookie and session storage. You can also pass your preferred nonce value as a paramater to the OktaAuth object if you want to overwrite the generated nonce value. <br/> **Note**: nonce is mandatory to resolve in  [getAuthCode](https://developer.genesys.cloud/api/digital/webmessaging/messengersdk/SDKCommandsEvents#authprovider-plugin "Goes to the Commands and events page") command when using OKTA SDK approach|
 	{: class="table-striped table-bordered"}
@@ -185,7 +187,9 @@ The following table describes the parameters for the OktaAuth object.
 
 1. Generate the **Auth URL** and trigger the login action. You can trigger this action when the user clicks a link, button, or interacts with another UI element, for example.  
 
-Your request URL looks like this:
+#### Authorization Code Flow
+
+Your request URL for Authorization Code flow looks like this:
 
 ```{"title":"Example request URL","language":"html"}
 authURL = `<DomainURL>client_id=<ClientId>&scope=openid%20email%20profile%20offline_access&response_type=code&redirect_uri=<RedirectURL>&state=eyJiYWNrVG9QYXRoIjoiL3ByaXZhdGUiLCJpc3N1ZXIiOiJva3RhIiwiYnl0ZXMiOiItSEhlWEV3YmNRak5fQWl3a0NkanVDNEZpQ1VPRV81emkzeFlKa1BQaWcwIn0%3D`
@@ -203,6 +207,14 @@ If you add the optional parameters, `nonce` and `maxAge`, your request URL looks
 authURL = `<DomainURL>client_id=<ClientId>&scope=openid%20email%20profile%20offline_access&response_type=code&redirect_uri=<RedirectURL>&state=eyJiYWNrVG9QYXRoIjoiL3ByaXZhdGUiLCJpc3N1ZXIiOiJva3RhIiwiYnl0ZXMiOiItSEhlWEV3YmNRak5fQWl3a0NkanVDNEZpQ1VPRV81emkzeFlKa1BQaWcwIn0%3D&nonce=<nonce>&max_age=<maxAge>`
 ```
 
+#### Implicit Flow
+
+Your request URL for Implicit flow looks like this:
+
+```{"title":"Example request URL for Implicit flow","language":"html"}
+authURL = `<DomainURL>client_id=<ClientId>&scope=openid%20email%20profile&response_type=id_token&redirect_uri=<RedirectURL>&state=<state>&nonce=<nonce>`
+```
+
 The following table describes the parameters for the Auth URL.
 
 | Parameter | Description |
@@ -211,7 +223,7 @@ The following table describes the parameters for the Auth URL.
 | `ClientId`  | Specify the clientID that was generated when you [set up your Okta app](#set-up-okta "Goes to the Set up Okta section").|
 | `RedirectURL`| Specify the URL to where the browser should be redirected when the user signs in. This must be your full page URL, which is listed in your Okta application's sign-in redirect URIs.|
 | `Auth scopes`| Set auth scopes to specify the access privileges that are being requested as part of the authorization, if required.|
-| `response_type`| Set this parameter to **code** to use the **Authorization Code** grant type.|
+| `response_type`| Specify the OAuth 2.0 response type: **code** for Authorization Code flow, or **id_token** for Implicit flow.|
 | `max_age` | Specify the allowable elapsed time, in seconds, since the last time the end user was actively authenticated by Okta.|
 | `nonce` | Specify a random string value, preferably an UUID format, that is returned in the ID token. |
 | `codeChallenge` | Specify the string value that the code verifier generated to support the PKCE OAuth flow. `codeChallenge` is verified in the access token request. **Note**: Code verifier is any random string value between 43 and 128 characters long. Okta uses it to recompute the code_challenge and verify if it matches the original code_challenge in the authorization request. For more information, see [the Flow specifics section in the Okta Developer Edition documentation](https://developer.okta.com/docs/guides/implement-grant-type/authcodepkce/main/#flow-specifics "Goes to the Flow specifics section of the Implement authorization by grant type page in the Okta Developer Edition documentation") or the [Sample code to generate code verifier and code challenge](#sample-code-to-generate-code-verifier-and-code-challenge "Goes to the Sample code to generate code verifier and code challenge section").|
@@ -219,10 +231,17 @@ The following table describes the parameters for the Auth URL.
 	{: class="table-striped table-bordered"}
 
 2. If the user does not have an existing Okta session, making this request opens the **Okta** sign-in page.
+
+#### Authorization Code Flow Response
+
 3. If the user does have an existing Okta session, they arrive at the specified redirect_uri along with a code, as shown in the following code snippet.
 
 ```{"title":"Redirect url appended with code and state","language":"javascript"}
 https://mypureclloud.com/?code=P5I7mdxxdv13_JfXrCSq&state=state-296bc9a0-a2a2-4a57-be1a-d0e2fd9bb601 // Code specifies Okta authcode
+
+```{"title":"Redirect url with id_token in fragment for Implicit flow","language":"javascript"}
+http://mypureclloud.com/#id_token=eyJraWQiOiJzeGc4ZFZOYmctNk...&state=IpfBYXLxQvy2E7U6gKr8dcwRUYJC9AfhPAHLGf6dIAieNxfb3iqaY0nX9ztrxwhj // ID token is returned in the URL fragment
+```
 ```
 
 4. The redirect_uri may also contain the optional **iss** parameter when the authorization server has **authorization_response_iss_parameter_supported** set to true. This results in the issuer URL being returned along with the code as shown in the code snippet below.
@@ -250,7 +269,8 @@ Genesys('registerPlugin', 'AuthProvider', (AuthProvider) => {
   }
 
   const urlParams = new URLSearchParams(window.location.search); // Get the authorization response which is added as a query string from the redirect URL
-  const authCode = urlParams.has('code') ? urlParams.get('code'); // Get code from the query string
+  const authCode = urlParams.has('code') ? urlParams.get('code'); // Auth code flow: Get code from the query string
+  const idToken = urlParams.has('id_token') ? urlParams.get('id_token'); // Implicit flow: Get id_tokenw from the query string
   const iss = urlParams.has('iss') ? urlParams.get('iss'); // Get optional iss parameter from the query string. urlParams will decode this issuer URL if it is encoded.
 
   /* Register Command - mandatory */
@@ -260,7 +280,8 @@ Genesys('registerPlugin', 'AuthProvider', (AuthProvider) => {
   //Messenger calls this command to get the the tokens.
 
   e.resolve({
-      authCode: <authCode>,			// Pass your authCode here
+      authCode: <authCode>,			// Auth code flow: Pass your authCode here
+      idToken: <id_token>,      // Implicit flow: Pass your Id token here
       redirectUri: <your redirect uri>,	   // Pass the redirection URI configured in your authentication provider here
       nonce: <nonce>,				//  Mandatory parameter in OKTA Javascript SDK approach.
       maxAge: <maxAge>				// Pass the elapsed time in seconds as an optional parameter
@@ -275,6 +296,7 @@ Genesys('registerPlugin', 'AuthProvider', (AuthProvider) => {
 **Note**: 
 - With OKTA SDK approach **nonce** option is mandatory to resolve in [getAuthCode](https://developer.genesys.cloud/api/digital/webmessaging/messengersdk/SDKCommandsEvents#authprovider-plugin "Goes to the Commands and events page") command.
 - The **redirectUri** option must match the **Sign-in redirect URI** specified in OKTA Developer Edition account.
+- Implicit flow does not support refresh tokens, so users will need to re-authenticate when tokens expire.
 :::
 
 8. To trigger the sign-out action, call the Okta Auth JavaScript SDK's **signOut** method after the [Auth.logout command](https://developer.genesys.cloud/api/digital/webmessaging/messengersdk/SDKCommandsEvents#auth-logout "Goes to Auth provider plugin"). You can trigger this action when the user clicks a link, button, or interacts with another UI element, for example.  
