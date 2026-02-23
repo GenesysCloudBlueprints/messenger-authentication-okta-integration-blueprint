@@ -395,60 +395,66 @@
 
 			function brandLogin() { // eslint-disable-line
 
-				const sClientId = ndAuthClientId.value;
-				const sOktaurl = ndOktaURL.value;
-				const sAuthScope = ndAuthScope.value;
+				let pBrandLogin;
 
-				const sAuthFlow = ndAuthFlow.value;
+				pBrandLogin = new Promise((resolve, reject) => {
 
-				bPKCE = sAuthFlow == "pkce_flow" || false;
+					const sClientId = ndAuthClientId.value;
+					const sOktaurl = ndOktaURL.value;
+					const sAuthScope = ndAuthScope.value;
 
-				const aScopes = ['openid', 'email', 'profile'];
+					const sAuthFlow = ndAuthFlow.value;
 
-				maxAge = ndAuthMaxAge.value;
+					bPKCE = sAuthFlow == "pkce_flow" || false;
 
-				localStorage.setItem('clientId', sClientId); // eslint-disable-line
-				localStorage.setItem('oktaurl', sOktaurl); // eslint-disable-line
-				localStorage.setItem('authScope', sAuthScope); // eslint-disable-line
-				localStorage.setItem('maxAge', maxAge); // eslint-disable-line
-				localStorage.setItem("authFlow", sAuthFlow); // eslint-disable-line
+					const aScopes = ['openid', 'email', 'profile'];
 
+					maxAge = ndAuthMaxAge.value;
 
-				if (sClientId && sOktaurl) { // eslint-disable-line
-					showProgress();
-					// LocalStorage usage is must for this product
-					localStorage.setItem('authFetching', true); // eslint-disable-line
-					if (sAuthScope === 'offline_access') aScopes.push(sAuthScope);// eslint-disable-line
+					localStorage.setItem('clientId', sClientId); // eslint-disable-line
+					localStorage.setItem('oktaurl', sOktaurl); // eslint-disable-line
+					localStorage.setItem('authScope', sAuthScope); // eslint-disable-line
+					localStorage.setItem('maxAge', maxAge); // eslint-disable-line
+					localStorage.setItem("authFlow", sAuthFlow); // eslint-disable-line
 
-					const oktaConfig = {// eslint-disable-line
-						redirectUri: `${sRedirectURL}`,
-						clientId: sClientId,
-						issuer: `${sOktaurl}`,
-						scopes: aScopes,
-						pkce: bPKCE ? true : false,
-						responseType: 'code',
-					};
+					if (sClientId && sOktaurl) { // eslint-disable-line
+						showProgress();
+						// LocalStorage usage is must for this product
+						localStorage.setItem('authFetching', true); // eslint-disable-line
+						if (sAuthScope === 'offline_access') aScopes.push(sAuthScope);// eslint-disable-line
 
-					if (maxAge) {
-						oktaConfig.maxAge = parseInt(maxAge) // eslint-disable-line
+						const oktaConfig = {// eslint-disable-line
+							redirectUri: `${sRedirectURL}`,
+							clientId: sClientId,
+							issuer: `${sOktaurl}`,
+							scopes: aScopes,
+							pkce: bPKCE ? true : false,
+							responseType: 'code',
+						};
+
+						if (maxAge) {
+							oktaConfig.maxAge = parseInt(maxAge) // eslint-disable-line
+						}
+
+						/**Initialize the okta auth client with the config options */
+
+						if (!authClient) authClient = new OktaAuth(oktaConfig); // eslint-disable-line 
+
+						authClient.signInWithRedirect({
+							originalUri: `${window.location.href}`,
+							...oktaConfig,
+						});
+
+					} else {
+						// LocalStorage usage is must for this product
+						localStorage.setItem('authFetching', false);  // eslint-disable-line
+						if (!sClientId) document.getElementById('authClientId').classList.add('is-invalid');
+						if (!sOktaurl) document.getElementById('oktaURL').classList.add('is-invalid');
+						reject();
 					}
+				});
 
-					/**Initialize the okta auth client with the config options */
-
-					if (!authClient) authClient = new OktaAuth(oktaConfig); // eslint-disable-line 
-
-					authClient.signInWithRedirect({
-						originalUri: `${window.location.href}`,
-						...oktaConfig,
-					});
-
-
-				} else {
-					// LocalStorage usage is must for this product
-					localStorage.setItem('authFetching', false);  // eslint-disable-line
-					if (!sClientId) document.getElementById('authClientId').classList.add('is-invalid');
-					if (!sOktaurl) document.getElementById('oktaURL').classList.add('is-invalid');
-				}
+				return pBrandLogin;
 			}
 
 			function clearStorage() {
@@ -497,8 +503,34 @@
 				// getAuthCode
 				// getTokens
 				// setTokens
+				// signIn
+				//  - command that brand will use to call their login method, reads user credentials and sign-in. Messenger will call this command when you ask Messenger to step up conversation.
+  				//  - If this command is resolved with authCode, that will be used skipping calling getAuthCode command. Otherwise, it will call getAuthCode command after this command is resolved.
+  				//  - If brand's page reload happens after login, then getAuthCode command will automatically be called (existing mechanism)
+  				// Note: Difference between "getAuthCode" and "signIn" command is that, getAuthCode requires brand is already logged-in where as signIn knows brand is not logged-in and asks to login.
 
 				/* Register Commands */
+
+				AuthProvider.registerCommand('signIn', (e) => {
+
+					localStorage.setItem('clientId', ndAuthClientId.value); // eslint-disable-line
+					localStorage.setItem('oktaurl', ndOktaURL.value); // eslint-disable-line
+					localStorage.setItem('authScope', ndAuthScope.value); // eslint-disable-line
+					localStorage.setItem('maxAge', ndAuthMaxAge.value); // eslint-disable-line
+					localStorage.setItem("authFlow", ndAuthFlow.value); // eslint-disable-line
+
+					brandLogin().then((data) => {
+
+						AuthProvider.publish('signedIn', data); // {authCode: xxx, ...} - To let Auth plugin know and it will initialize GenesysJS
+						resolve(data);
+
+					}, (error) => {
+
+						// when brand signIn failed for any reason, brand should handle it and publish 'signInFailed' event along with rejecting the command.
+						AuthProvider.publish('signInFailed', error);
+						e.reject(error);
+					});
+				});
 
 				AuthProvider.registerCommand('getAuthCode', (e) => {
 					const { forceUpdate } = e.data || {};
@@ -568,6 +600,9 @@
 							clearStorage();
 						});
 				};
+
+				// Publishing signedIn event this way here for OKTA, since it redirects the page after successful login. This event is MANDATORY for Messenger to reInitialize.
+				if(AuthProvider && brandAuthCode) AuthProvider.publish('signedIn', { authCode: brandAuthCode });
 
 				// Tell CXBus your plugin is ready (mandatory)
 				AuthProvider.ready();
